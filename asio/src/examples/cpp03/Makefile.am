@@ -40,6 +40,7 @@ noinst_PROGRAMS = \
 	socks4/sync_client \
 	timeouts/async_tcp_client \
 	timeouts/blocking_tcp_client \
+	timeouts/blocking_token_tcp_client \
 	timeouts/blocking_udp_client \
 	timeouts/server \
 	timers/time_t_timer \
@@ -88,8 +89,7 @@ noinst_HEADERS = \
 	chat/chat_message.hpp \
 	services/basic_logger.hpp \
 	services/logger.hpp \
-	services/logger_service.hpp \
-	services/stream_socket_service.hpp
+	services/logger_service.hpp
 
 AM_CXXFLAGS = -I$(srcdir)/../../../include
 
@@ -154,6 +154,7 @@ services_daytime_client_SOURCES = \
 socks4_sync_client_SOURCES = socks4/sync_client.cpp
 timeouts_async_tcp_client_SOURCES = timeouts/async_tcp_client.cpp
 timeouts_blocking_tcp_client_SOURCES = timeouts/blocking_tcp_client.cpp
+timeouts_blocking_token_tcp_client_SOURCES = timeouts/blocking_token_tcp_client.cpp
 timeouts_blocking_udp_client_SOURCES = timeouts/blocking_udp_client.cpp
 timeouts_server_SOURCES = timeouts/server.cpp
 timers_time_t_timer_SOURCES = timers/time_t_timer.cpp
@@ -191,9 +192,9 @@ endif
 
 if HAVE_BOOST_COROUTINE
 spawn_echo_server_SOURCES = spawn/echo_server.cpp
-spawn_echo_server_LDADD = $(LDADD) -lboost_coroutine -lboost_context -lboost_system
+spawn_echo_server_LDADD = $(LDADD) -lboost_coroutine -lboost_context -lboost_thread -lboost_chrono -lboost_system
 spawn_parallel_grep_SOURCES = spawn/parallel_grep.cpp
-spawn_parallel_grep_LDADD = $(LDADD) -lboost_coroutine -lboost_context -lboost_system
+spawn_parallel_grep_LDADD = $(LDADD) -lboost_coroutine -lboost_context -lboost_thread -lboost_chrono -lboost_system
 endif
 
 EXTRA_DIST = \
@@ -240,13 +241,11 @@ EXTRA_DIST = \
 	services/basic_logger.hpp \
 	services/logger.hpp \
 	services/logger_service.hpp \
-	services/stream_socket_service.hpp \
 	socks4/socks4.hpp \
 	ssl/README \
 	ssl/ca.pem \
 	ssl/server.pem \
-	ssl/dh2048.pem \
-	timers/tick_count_timer.cpp
+	ssl/dh2048.pem
 
 MAINTAINERCLEANFILES = \
 	$(srcdir)/Makefile.in

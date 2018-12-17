@@ -2,7 +2,7 @@
 // detail/winrt_ssocket_service_base.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -65,7 +65,7 @@ public:
       asio::io_context& io_context);
 
   // Destroy all user-defined handler objects owned by the service.
-  ASIO_DECL void shutdown();
+  ASIO_DECL void base_shutdown();
 
   // Construct a new socket implementation.
   ASIO_DECL void construct(base_implementation_type&);
@@ -90,6 +90,10 @@ public:
 
   // Destroy a socket implementation.
   ASIO_DECL asio::error_code close(
+      base_implementation_type& impl, asio::error_code& ec);
+
+  // Release ownership of the socket.
+  ASIO_DECL native_handle_type release(
       base_implementation_type& impl, asio::error_code& ec);
 
   // Get the native socket representation.

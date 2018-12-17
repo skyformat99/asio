@@ -2,7 +2,7 @@
 // detail/reactive_socket_service_base.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -66,7 +66,7 @@ public:
       asio::io_context& io_context);
 
   // Destroy all user-defined handler objects owned by the service.
-  ASIO_DECL void shutdown();
+  ASIO_DECL void base_shutdown();
 
   // Construct a new socket implementation.
   ASIO_DECL void construct(base_implementation_type& impl);
@@ -91,6 +91,10 @@ public:
 
   // Destroy a socket implementation.
   ASIO_DECL asio::error_code close(
+      base_implementation_type& impl, asio::error_code& ec);
+
+  // Release ownership of the socket.
+  ASIO_DECL socket_type release(
       base_implementation_type& impl, asio::error_code& ec);
 
   // Get the native socket representation.
@@ -163,14 +167,6 @@ public:
     return ec;
   }
 
-  // Disable sends or receives on the socket.
-  asio::error_code shutdown(base_implementation_type& impl,
-      socket_base::shutdown_type what, asio::error_code& ec)
-  {
-    socket_ops::shutdown(impl.socket_, what, ec);
-    return ec;
-  }
-
   // Wait for the socket to become ready to read, ready to write, or to have
   // pending error conditions.
   asio::error_code wait(base_implementation_type& impl,
@@ -179,13 +175,13 @@ public:
     switch (w)
     {
     case socket_base::wait_read:
-      socket_ops::poll_read(impl.socket_, impl.state_, ec);
+      socket_ops::poll_read(impl.socket_, impl.state_, -1, ec);
       break;
     case socket_base::wait_write:
-      socket_ops::poll_write(impl.socket_, impl.state_, ec);
+      socket_ops::poll_write(impl.socket_, impl.state_, -1, ec);
       break;
     case socket_base::wait_error:
-      socket_ops::poll_error(impl.socket_, impl.state_, ec);
+      socket_ops::poll_error(impl.socket_, impl.state_, -1, ec);
       break;
     default:
       ec = asio::error::invalid_argument;
@@ -254,7 +250,7 @@ public:
       socket_base::message_flags, asio::error_code& ec)
   {
     // Wait for socket to become ready.
-    socket_ops::poll_write(impl.socket_, impl.state_, ec);
+    socket_ops::poll_write(impl.socket_, impl.state_, -1, ec);
 
     return 0;
   }
@@ -273,7 +269,7 @@ public:
     typedef reactive_socket_send_op<ConstBufferSequence, Handler> op;
     typename op::ptr p = { asio::detail::addressof(handler),
       op::ptr::allocate(handler), 0 };
-    p.p = new (p.v) op(impl.socket_, buffers, flags, handler);
+    p.p = new (p.v) op(impl.socket_, impl.state_, buffers, flags, handler);
 
     ASIO_HANDLER_CREATION((reactor_.context(), *p.p, "socket",
           &impl, impl.socket_, "async_send"));
@@ -324,7 +320,7 @@ public:
       socket_base::message_flags, asio::error_code& ec)
   {
     // Wait for socket to become ready.
-    socket_ops::poll_read(impl.socket_, impl.state_, ec);
+    socket_ops::poll_read(impl.socket_, impl.state_, -1, ec);
 
     return 0;
   }
@@ -404,7 +400,7 @@ public:
       socket_base::message_flags& out_flags, asio::error_code& ec)
   {
     // Wait for socket to become ready.
-    socket_ops::poll_read(impl.socket_, impl.state_, ec);
+    socket_ops::poll_read(impl.socket_, impl.state_, -1, ec);
 
     // Clear out_flags, since we cannot give it any other sensible value when
     // performing a null_buffers operation.

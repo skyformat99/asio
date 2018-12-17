@@ -2,7 +2,7 @@
 // detail/impl/winrt_ssocket_service_base.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -38,7 +38,7 @@ winrt_ssocket_service_base::winrt_ssocket_service_base(
 {
 }
 
-void winrt_ssocket_service_base::shutdown()
+void winrt_ssocket_service_base::base_shutdown()
 {
   // Close all implementations, causing all operations to complete.
   asio::detail::mutex::scoped_lock lock(mutex_);
@@ -146,6 +146,23 @@ asio::error_code winrt_ssocket_service_base::close(
 
   ec = asio::error_code();
   return ec;
+}
+
+winrt_ssocket_service_base::native_handle_type
+winrt_ssocket_service_base::release(
+    winrt_ssocket_service_base::base_implementation_type& impl,
+    asio::error_code& ec)
+{
+  if (!is_open(impl))
+    return nullptr;
+
+  cancel(impl, ec);
+  if (ec)
+    return nullptr;
+
+  native_handle_type tmp = impl.socket_;
+  impl.socket_ = nullptr;
+  return tmp;
 }
 
 std::size_t winrt_ssocket_service_base::do_get_endpoint(
@@ -449,7 +466,7 @@ std::size_t winrt_ssocket_service_base::do_send(
   try
   {
     buffer_sequence_adapter<asio::const_buffer,
-      asio::const_buffers_1> bufs(asio::buffer(data));
+      asio::const_buffer> bufs(asio::buffer(data));
 
     if (bufs.all_empty())
     {
@@ -490,7 +507,7 @@ void winrt_ssocket_service_base::start_send_op(
   try
   {
     buffer_sequence_adapter<asio::const_buffer,
-        asio::const_buffers_1> bufs(asio::buffer(data));
+        asio::const_buffer> bufs(asio::buffer(data));
 
     if (bufs.all_empty())
     {
@@ -529,7 +546,7 @@ std::size_t winrt_ssocket_service_base::do_receive(
   try
   {
     buffer_sequence_adapter<asio::mutable_buffer,
-        asio::mutable_buffers_1> bufs(asio::buffer(data));
+        asio::mutable_buffer> bufs(asio::buffer(data));
 
     if (bufs.all_empty())
     {
@@ -581,7 +598,7 @@ void winrt_ssocket_service_base::start_receive_op(
   try
   {
     buffer_sequence_adapter<asio::mutable_buffer,
-        asio::mutable_buffers_1> bufs(asio::buffer(data));
+        asio::mutable_buffer> bufs(asio::buffer(data));
 
     if (bufs.all_empty())
     {

@@ -2,7 +2,7 @@
 // detail/null_socket_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -31,7 +31,8 @@ namespace asio {
 namespace detail {
 
 template <typename Protocol>
-class null_socket_service
+class null_socket_service :
+  public service_base<null_socket_service<Protocol> >
 {
 public:
   // The protocol type.
@@ -50,7 +51,8 @@ public:
 
   // Constructor.
   null_socket_service(asio::io_context& io_context)
-    : io_context_(io_context)
+    : service_base<null_socket_service<Protocol> >(io_context),
+      io_context_(io_context)
   {
   }
 
@@ -78,6 +80,7 @@ public:
   // Move-construct a new socket implementation from another protocol type.
   template <typename Protocol1>
   void converting_move_construct(implementation_type&,
+      null_socket_service<Protocol1>&,
       typename null_socket_service<Protocol1>::implementation_type&)
   {
   }
@@ -115,6 +118,14 @@ public:
   {
     ec = asio::error::operation_not_supported;
     return ec;
+  }
+
+  // Release ownership of the socket.
+  native_handle_type release(implementation_type&,
+      asio::error_code& ec)
+  {
+    ec = asio::error::operation_not_supported;
+    return 0;
   }
 
   // Get the native socket representation.
